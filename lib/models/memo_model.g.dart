@@ -8,7 +8,7 @@ part of 'memo_model.dart';
 
 _$MemoModelImpl _$$MemoModelImplFromJson(Map<String, dynamic> json) =>
     _$MemoModelImpl(
-      id: json['id'] as String,
+      memoId: json['memo_id'] as String,
       content: json['content'] as String,
       description: json['description'] as String?,
       color: json['color'] as String,
@@ -18,7 +18,7 @@ _$MemoModelImpl _$$MemoModelImplFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$$MemoModelImplToJson(_$MemoModelImpl instance) =>
     <String, dynamic>{
-      'id': instance.id,
+      'memo_id': instance.memoId,
       'content': instance.content,
       'description': instance.description,
       'color': instance.color,

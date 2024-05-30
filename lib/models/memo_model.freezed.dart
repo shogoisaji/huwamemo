@@ -20,7 +20,8 @@ MemoModel _$MemoModelFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$MemoModel {
-  String get id => throw _privateConstructorUsedError;
+  @JsonKey(name: 'memo_id')
+  String get memoId => throw _privateConstructorUsedError;
   String get content => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
   String get color => throw _privateConstructorUsedError;
@@ -41,7 +42,7 @@ abstract class $MemoModelCopyWith<$Res> {
       _$MemoModelCopyWithImpl<$Res, MemoModel>;
   @useResult
   $Res call(
-      {String id,
+      {@JsonKey(name: 'memo_id') String memoId,
       String content,
       String? description,
       String color,
@@ -62,7 +63,7 @@ class _$MemoModelCopyWithImpl<$Res, $Val extends MemoModel>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? id = null,
+    Object? memoId = null,
     Object? content = null,
     Object? description = freezed,
     Object? color = null,
@@ -70,9 +71,9 @@ class _$MemoModelCopyWithImpl<$Res, $Val extends MemoModel>
     Object? createdAt = null,
   }) {
     return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
+      memoId: null == memoId
+          ? _value.memoId
+          : memoId // ignore: cast_nullable_to_non_nullable
               as String,
       content: null == content
           ? _value.content
@@ -107,7 +108,7 @@ abstract class _$$MemoModelImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {String id,
+      {@JsonKey(name: 'memo_id') String memoId,
       String content,
       String? description,
       String color,
@@ -126,7 +127,7 @@ class __$$MemoModelImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? id = null,
+    Object? memoId = null,
     Object? content = null,
     Object? description = freezed,
     Object? color = null,
@@ -134,9 +135,9 @@ class __$$MemoModelImplCopyWithImpl<$Res>
     Object? createdAt = null,
   }) {
     return _then(_$MemoModelImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
+      memoId: null == memoId
+          ? _value.memoId
+          : memoId // ignore: cast_nullable_to_non_nullable
               as String,
       content: null == content
           ? _value.content
@@ -166,7 +167,7 @@ class __$$MemoModelImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$MemoModelImpl implements _MemoModel {
   const _$MemoModelImpl(
-      {required this.id,
+      {@JsonKey(name: 'memo_id') required this.memoId,
       required this.content,
       this.description,
       required this.color,
@@ -177,7 +178,8 @@ class _$MemoModelImpl implements _MemoModel {
       _$$MemoModelImplFromJson(json);
 
   @override
-  final String id;
+  @JsonKey(name: 'memo_id')
+  final String memoId;
   @override
   final String content;
   @override
@@ -193,7 +195,7 @@ class _$MemoModelImpl implements _MemoModel {
 
   @override
   String toString() {
-    return 'MemoModel(id: $id, content: $content, description: $description, color: $color, finishDate: $finishDate, createdAt: $createdAt)';
+    return 'MemoModel(memoId: $memoId, content: $content, description: $description, color: $color, finishDate: $finishDate, createdAt: $createdAt)';
   }
 
   @override
@@ -201,7 +203,7 @@ class _$MemoModelImpl implements _MemoModel {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$MemoModelImpl &&
-            (identical(other.id, id) || other.id == id) &&
+            (identical(other.memoId, memoId) || other.memoId == memoId) &&
             (identical(other.content, content) || other.content == content) &&
             (identical(other.description, description) ||
                 other.description == description) &&
@@ -215,7 +217,7 @@ class _$MemoModelImpl implements _MemoModel {
   @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
-      runtimeType, id, content, description, color, finishDate, createdAt);
+      runtimeType, memoId, content, description, color, finishDate, createdAt);
 
   @JsonKey(ignore: true)
   @override
@@ -233,7 +235,7 @@ class _$MemoModelImpl implements _MemoModel {
 
 abstract class _MemoModel implements MemoModel {
   const factory _MemoModel(
-          {required final String id,
+          {@JsonKey(name: 'memo_id') required final String memoId,
           required final String content,
           final String? description,
           required final String color,
@@ -245,7 +247,8 @@ abstract class _MemoModel implements MemoModel {
       _$MemoModelImpl.fromJson;
 
   @override
-  String get id;
+  @JsonKey(name: 'memo_id')
+  String get memoId;
   @override
   String get content;
   @override

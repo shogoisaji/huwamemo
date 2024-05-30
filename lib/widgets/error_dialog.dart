@@ -6,7 +6,7 @@ class ErrorDialog {
   static void show(BuildContext context, String message,
       {String? secondaryMessage, Function()? onTapFunction}) {
     showDialog(
-      barrierDismissible: false,
+      // barrierDismissible: false,
       context: context,
       builder: (dialogContext) {
         return Dialog(
@@ -56,6 +56,7 @@ class ErrorDialog {
                         HapticFeedback.lightImpact();
                         onTapFunction != null ? onTapFunction() : null;
                         Navigator.pop(dialogContext);
+                        FocusScope.of(context).unfocus();
                       },
                       child: Container(
                         height: 50,

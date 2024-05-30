@@ -14,11 +14,11 @@ SqfliteRepository sqfliteRepository(
 }
 
 class SqfliteRepository {
-  static const _databaseName = "sqflite_Database_test8.db";
+  static const _databaseName = "sqflite_Database_test12.db";
   static const _databaseVersion = 1;
   static const table = 'MemoTable';
 
-  static const id = 'id';
+  static const memoId = 'memo_id';
   static const content = 'content';
   static const color = 'color';
   static const description = 'description';
@@ -44,7 +44,7 @@ class SqfliteRepository {
   Future _onCreate(Database db, int version) async {
     await db.execute('''
           CREATE TABLE $table (
-            $id TEXT PRIMARY KEY,
+            $memoId TEXT PRIMARY KEY,
             $content TEXT NOT NULL,
             $color TEXT NOT NULL,
             $description TEXT,
@@ -91,7 +91,7 @@ class SqfliteRepository {
       Database db = await instance.database;
       final List<Map<String, dynamic>> maps = await db.query(
         table,
-        where: '$id = ?',
+        where: '$memoId = ?',
         whereArgs: [id],
       );
 
@@ -111,8 +111,8 @@ class SqfliteRepository {
       await db.update(
         table,
         memo.toJson(),
-        where: '$id = ?',
-        whereArgs: [memo.id],
+        where: '$memoId = ?',
+        whereArgs: [memo.memoId],
       );
     } catch (e) {
       throw Exception('更新に失敗しました');
@@ -124,7 +124,7 @@ class SqfliteRepository {
       Database db = await instance.database;
       await db.delete(
         table,
-        where: '$id = ?',
+        where: '$memoId = ?',
         whereArgs: [id],
       );
     } catch (e) {

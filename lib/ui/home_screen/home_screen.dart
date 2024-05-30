@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -7,38 +5,38 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:huwamemo/models/memo_model.dart';
 import 'package:huwamemo/settings/text_theme.dart';
 import 'package:huwamemo/ui/home_screen/home_screen_view_model.dart';
+import 'package:huwamemo/ui/state/home_screen_state.dart';
 import 'package:huwamemo/widgets/cloud_container.dart';
 import 'package:huwamemo/widgets/error_dialog.dart';
+import 'package:huwamemo/ui/archive_screen/archive_screen.dart';
 
 class HomeScreen extends HookConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(homeScreenViewModelProvider);
+
     final w = MediaQuery.of(context).size.width;
     final h = MediaQuery.of(context).size.height;
 
-    final memoList = useState<List<MemoModel>>([]);
     final selectedMeme = useState<MemoModel?>(null);
     final actionNumber = useState<int?>(null);
     final showTextInput = useState<bool>(false);
-    final focusNode = useFocusNode();
+    final focusNode = useFocusNode(descendantsAreFocusable: false);
     final textEditingController = useTextEditingController();
     final inputText = useState<String>('');
 
     final inputAnimationController = useAnimationController(
       duration: const Duration(milliseconds: 500),
     );
-    final inputAppearAnimation = CurvedAnimation(
-        parent: inputAnimationController, curve: Curves.easeInOut);
 
     void initialize() async {
-      memoList.value =
-          await ref.read(homeScreenViewModelProvider.notifier).loadAllMemos();
+      ref.read(homeScreenViewModelProvider.notifier).initialize();
     }
 
     /// 画面からはみ出さなければtrue
-    bool totalHeightCheck() {
+    bool totalHeightCheck(List<HomeMemo> homeMemos) {
       final padding = MediaQuery.of(context).padding;
       double safeHeight = MediaQuery.of(context).size.height -
           padding.top -
@@ -46,11 +44,24 @@ class HomeScreen extends HookConsumerWidget {
           kToolbarHeight;
       double totalHeight = 0;
 
-      //// 仮
-      for (var memo in memoList.value) {
-        totalHeight += 150;
+      for (HomeMemo memo in homeMemos) {
+        totalHeight += memo.height;
       }
       return totalHeight < safeHeight - 150;
+    }
+
+    bool updateTotalHeightCheck(List<HomeMemo> homeMemos) {
+      final padding = MediaQuery.of(context).padding;
+      double safeHeight = MediaQuery.of(context).size.height -
+          padding.top -
+          padding.bottom -
+          kToolbarHeight;
+      double totalHeight = 0;
+
+      for (HomeMemo memo in homeMemos) {
+        totalHeight += memo.height;
+      }
+      return totalHeight < safeHeight;
     }
 
     void handleTapAdd() {
@@ -61,8 +72,50 @@ class HomeScreen extends HookConsumerWidget {
       FocusScope.of(context).requestFocus(focusNode);
     }
 
+    void deleteMemo(String id) async {
+      try {
+        await ref.read(homeScreenViewModelProvider.notifier).deleteMemo(id);
+        initialize();
+        selectedMeme.value = null;
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('削除しました'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } catch (e) {
+        print(e);
+      }
+    }
+
+    void handleUpdate(MemoModel memo) async {
+      final updatedMemos = await ref
+          .read(homeScreenViewModelProvider.notifier)
+          .checkUpdatedMemos(memo);
+
+      if (!updateTotalHeightCheck(updatedMemos)) {
+        if (!context.mounted) return;
+        ErrorDialog.show(context, '上限です');
+        return;
+      }
+      try {
+        await ref.read(homeScreenViewModelProvider.notifier).updateMemo(memo);
+        selectedMeme.value = null;
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('更新しました'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        initialize();
+      } catch (e) {
+        print(e);
+      }
+    }
+
     void handleSaveText(String text) async {
-      if (text.isEmpty) return;
       print('text: $text');
       try {
         await ref.read(homeScreenViewModelProvider.notifier).insertMemo(text);
@@ -71,6 +124,7 @@ class HomeScreen extends HookConsumerWidget {
 
         /// input をしまう
         inputAnimationController.reverse();
+        if (!context.mounted) return;
         FocusScope.of(context).unfocus();
 
         /// スナックバーを表示
@@ -111,20 +165,41 @@ class HomeScreen extends HookConsumerWidget {
         backgroundColor: Colors.transparent,
         leading: IconButton(
             onPressed: () {},
-            icon: const Icon(
+            icon: Icon(
               Icons.settings,
-              size: 28,
+              size: 32,
+              color: Colors.grey.shade600,
             )),
         actions: [
+          // Padding(
+          //   padding: const EdgeInsets.only(right: 8.0),
+          //   child: IconButton(
+          //       onPressed: () {
+          //         Navigator.push(
+          //             context,
+          //             MaterialPageRoute(
+          //                 builder: (context) => const ArchiveScreen()));
+          //       },
+          //       icon: const Icon(
+          //         Icons.archive,
+          //         size: 32,
+          //       )),
+          // ),
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
                 onPressed: () {
-                  handleTapAdd();
+                  if (!totalHeightCheck(state.homeMemos)) {
+                    ErrorDialog.show(context, '上限です');
+                    return;
+                  } else {
+                    handleTapAdd();
+                  }
                 },
-                icon: const Icon(
-                  Icons.add,
-                  size: 32,
+                icon: Icon(
+                  Icons.add_circle_rounded,
+                  size: 48,
+                  color: Colors.red.shade200,
                 )),
           )
         ],
@@ -133,6 +208,23 @@ class HomeScreen extends HookConsumerWidget {
         fit: StackFit.expand,
         children: [
           _bg(),
+
+          /// 隠しTextField
+          SizedBox(
+            width: 1,
+            child: TextField(
+              focusNode: focusNode,
+              controller: textEditingController,
+              style: const TextStyle(color: Colors.transparent, fontSize: 1),
+              cursorColor: Colors.transparent,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+              ),
+              onChanged: (String value) {
+                inputText.value = value;
+              },
+            ),
+          ),
           SafeArea(
             child: Center(
               child: SizedBox(
@@ -142,39 +234,22 @@ class HomeScreen extends HookConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    /// 隠しTextField
-                    SizedBox(
-                      width: 1,
-                      child: TextField(
-                        focusNode: focusNode,
-                        controller: textEditingController,
-                        style: const TextStyle(
-                            color: Colors.transparent, fontSize: 1),
-                        cursorColor: Colors.transparent,
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                        ),
-                        onChanged: (String value) {
-                          inputText.value = value;
-                        },
-                      ),
-                    ),
                     ...List.generate(
-                      memoList.value.length,
+                      state.homeMemos.length,
                       (index) => GestureDetector(
                         onTap: () {
                           print('tap');
-                          selectedMeme.value = memoList.value[index];
+                          selectedMeme.value = state.homeMemos[index].memo;
                         },
                         child: CloudContainer(
                           waveCount: 25,
                           color: Color(int.parse(
-                              memoList.value[index].color
+                              state.homeMemos[index].memo.color
                                   .split('(0x')[1]
                                   .split(')')[0],
                               radix: 16)),
                           width: w,
-                          height: 100,
+                          height: state.homeMemos[index].height,
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 0),
                           waveRadius: 28,
@@ -193,7 +268,7 @@ class HomeScreen extends HookConsumerWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     AutoSizeText(
-                                      memoList.value[index].content,
+                                      state.homeMemos[index].memo.content,
                                       style: const TextStyle(
                                           fontSize: 30, height: 1.1),
                                       minFontSize: 16,
@@ -218,6 +293,12 @@ class HomeScreen extends HookConsumerWidget {
                   selectedMeme.value!,
                   onTapModal: () {
                     selectedMeme.value = null;
+                  },
+                  onDelete: (String id) {
+                    deleteMemo(id);
+                  },
+                  onUpdate: (MemoModel memo) {
+                    handleUpdate(memo);
                   },
                 )
               : const SizedBox.shrink(),
@@ -259,14 +340,19 @@ class HomeScreen extends HookConsumerWidget {
 class DetailWidget extends HookWidget {
   final MemoModel memo;
   final Function() onTapModal;
-  const DetailWidget(this.memo, {super.key, required this.onTapModal});
+  final Function(String) onDelete;
+  final Function(MemoModel) onUpdate;
+  const DetailWidget(this.memo,
+      {super.key,
+      required this.onTapModal,
+      required this.onDelete,
+      required this.onUpdate});
 
   @override
   Widget build(BuildContext context) {
     const wavePaddingHorizontal = 50.0;
     const wavePaddingVertical = 50.0;
 
-    final focusNode = useFocusNode();
     final contentTextController = useTextEditingController(text: memo.content);
     final descriptionTextController =
         useTextEditingController(text: memo.description);
@@ -294,6 +380,32 @@ class DetailWidget extends HookWidget {
       Future.delayed(const Duration(milliseconds: 200), () {
         onTapModal();
       });
+    }
+
+    void handleDelete() {
+      onDelete(memo.memoId);
+    }
+
+    void incrementRemainingDays() {
+      if (remainingDays.value.inDays > 98) return;
+      remainingDays.value = remainingDays.value + const Duration(days: 1);
+    }
+
+    void decrementRemainingDays() {
+      if (remainingDays.value.inDays < 1) return;
+      remainingDays.value = remainingDays.value - const Duration(days: 1);
+    }
+
+    void handleUpdate() {
+      final updatedMemo = MemoModel(
+        memoId: memo.memoId,
+        content: contentTextController.text,
+        description: descriptionTextController.text,
+        color: memo.color,
+        finishDate: DateTime.now().add(remainingDays.value),
+        createdAt: memo.createdAt,
+      );
+      onUpdate(updatedMemo);
     }
 
     useEffect(() {
@@ -330,7 +442,7 @@ class DetailWidget extends HookWidget {
                         FocusScope.of(context).unfocus();
                       },
                       child: CloudContainer(
-                        waveCount: 40,
+                        waveCount: 30,
                         color: Color(int.parse(
                             memo.color.split('(0x')[1].split(')')[0],
                             radix: 16)),
@@ -338,7 +450,7 @@ class DetailWidget extends HookWidget {
                         height: size.height,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 0),
-                        waveRadius: 30,
+                        waveRadius: 40,
                         touchStrength: 0.7,
                         wavePaddingVertical: wavePaddingVertical,
                         wavePaddingHorizontal: wavePaddingHorizontal,
@@ -373,7 +485,8 @@ class DetailWidget extends HookWidget {
                                             borderRadius:
                                                 BorderRadius.circular(8),
                                             border: Border.all(
-                                                color: Colors.black, width: 1)),
+                                                color: Colors.blueGrey,
+                                                width: 1)),
                                         child: TextField(
                                           // focusNode: focusNode,
                                           controller: contentTextController,
@@ -406,7 +519,8 @@ class DetailWidget extends HookWidget {
                                             borderRadius:
                                                 BorderRadius.circular(8),
                                             border: Border.all(
-                                                color: Colors.black, width: 1)),
+                                                color: Colors.blueGrey,
+                                                width: 1)),
                                         child: TextField(
                                           // focusNode: focusNode,
                                           controller: descriptionTextController,
@@ -442,7 +556,7 @@ class DetailWidget extends HookWidget {
                                               borderRadius:
                                                   BorderRadius.circular(8),
                                               border: Border.all(
-                                                  color: Colors.black,
+                                                  color: Colors.blueGrey,
                                                   width: 1)),
                                           child: Center(
                                             child: AutoSizeText(
@@ -475,7 +589,7 @@ class DetailWidget extends HookWidget {
                                               borderRadius:
                                                   BorderRadius.circular(8),
                                               border: Border.all(
-                                                  color: Colors.black,
+                                                  color: Colors.blueGrey,
                                                   width: 1)),
                                           child: Row(
                                             mainAxisAlignment:
@@ -520,18 +634,27 @@ class DetailWidget extends HookWidget {
                                 children: [
                                   ElevatedButton(
                                     onPressed: () {
-                                      print('back');
-                                      handleBack();
+                                      handleDelete();
                                     },
-                                    child: const Text('戻る'),
+                                    child: const Text('削除'),
+                                  ),
+                                  IconButton(
+                                    onPressed: () {
+                                      incrementRemainingDays();
+                                    },
+                                    icon: const Icon(Icons.add),
+                                  ),
+                                  IconButton(
+                                    onPressed: () {
+                                      decrementRemainingDays();
+                                    },
+                                    icon: const Icon(Icons.remove),
                                   ),
                                   ElevatedButton(
-                                    onPressed: () {},
-                                    child: const Text('編集'),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () {},
-                                    child: const Text('編集'),
+                                    onPressed: () {
+                                      handleUpdate();
+                                    },
+                                    child: const Text('更新'),
                                   ),
                                 ],
                               ),
@@ -576,8 +699,6 @@ class TextInput extends StatelessWidget {
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
     final h = MediaQuery.of(context).size.height;
-
-    final formKey = GlobalKey<FormState>();
 
     final appearAnimation = CurvedAnimation(
         parent: appearAnimationController, curve: Curves.easeInOut);
@@ -651,40 +772,36 @@ class TextInput extends StatelessWidget {
                             height: 200,
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 32, vertical: 12),
-                            child: Form(
-                                key: formKey,
-                                child: Column(
-                                  children: [
-                                    Expanded(
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 16, vertical: 4),
-                                        width: double.infinity,
-                                        height: double.infinity,
-                                        child: Center(
-                                            child: AutoSizeText(
-                                          inputText,
-                                          style: const TextStyle(
-                                              fontSize: 30, height: 1.1),
-                                          minFontSize: 16,
-                                          maxLines: 4,
-                                          overflow: TextOverflow.ellipsis,
-                                        )),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        print('save');
-                                        if (formKey.currentState!.validate()) {
-                                          onSave();
-                                        }
-                                      },
-                                      child: const Text('追加'),
-                                    ),
-                                    const SizedBox(height: 8),
-                                  ],
-                                )),
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 4),
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    child: Center(
+                                        child: AutoSizeText(
+                                      inputText,
+                                      style: const TextStyle(
+                                          fontSize: 30, height: 1.1),
+                                      minFontSize: 16,
+                                      maxLines: 4,
+                                      overflow: TextOverflow.ellipsis,
+                                    )),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    print('save');
+                                    onSave();
+                                  },
+                                  child: const Text('追加'),
+                                ),
+                                const SizedBox(height: 8),
+                              ],
+                            ),
                           ),
                         ),
                       ],

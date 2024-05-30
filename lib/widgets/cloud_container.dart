@@ -344,6 +344,16 @@ class _CloudContainerState extends State<CloudContainer>
         widget.actionNumber != null) {
       downAction();
     }
+    if (widget.height != oldWidget.height) {
+      setWaveBaseRectSize();
+      setRandomList();
+      setBasePointList();
+
+      cloudPath = createCloudPath();
+      if (widget.isWaveMove) {
+        _waveAnimationController.repeat(reverse: true);
+      }
+    }
   }
 
   @override

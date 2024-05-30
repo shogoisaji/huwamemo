@@ -29,7 +29,7 @@ void main() async {
     home: scope,
     theme: ThemeData(
       scaffoldBackgroundColor: Colors.grey,
-      fontFamily: 'InterTight',
+      fontFamily: 'MPlusRounded1c',
       useMaterial3: true,
     ),
     debugShowCheckedModeBanner: false,

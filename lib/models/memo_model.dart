@@ -8,7 +8,7 @@ part 'memo_model.g.dart';
 @freezed
 class MemoModel with _$MemoModel {
   const factory MemoModel({
-    required String id,
+    @JsonKey(name: 'memo_id') required String memoId,
     required String content,
     String? description,
     required String color,
@@ -23,7 +23,7 @@ class MemoModel with _$MemoModel {
       {String? description, String? decoration}) {
     const dateRange = 7;
     return MemoModel(
-      id: const Uuid().v4(),
+      memoId: const Uuid().v4().replaceAll('-', ''),
       content: content,
       description: description ?? '',
       color: Colors.white.toString(),
