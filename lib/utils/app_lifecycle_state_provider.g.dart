@@ -1,27 +1,25 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'home_screen_view_model.dart';
+part of 'app_lifecycle_state_provider.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$homeScreenViewModelHash() =>
-    r'e166cd7c09b932ce7aad5ccf4ab02823e1fac2d2';
+String _$appLifecycleStateHash() => r'974a53ea7166aaa18ea48de54b1900c68667c39b';
 
-/// See also [HomeScreenViewModel].
-@ProviderFor(HomeScreenViewModel)
-final homeScreenViewModelProvider =
-    AutoDisposeNotifierProvider<HomeScreenViewModel, HomeScreenState>.internal(
-  HomeScreenViewModel.new,
-  name: r'homeScreenViewModelProvider',
+/// See also [appLifecycleState].
+@ProviderFor(appLifecycleState)
+final appLifecycleStateProvider = Provider<AppLifecycleState>.internal(
+  appLifecycleState,
+  name: r'appLifecycleStateProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
       ? null
-      : _$homeScreenViewModelHash,
+      : _$appLifecycleStateHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef _$HomeScreenViewModel = AutoDisposeNotifier<HomeScreenState>;
+typedef AppLifecycleStateRef = ProviderRef<AppLifecycleState>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

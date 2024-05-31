@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:huwamemo/models/memo_model.dart';
@@ -9,9 +10,9 @@ import 'package:huwamemo/settings/text_theme.dart';
 import 'package:huwamemo/ui/home_screen/home_screen_view_model.dart';
 import 'package:huwamemo/ui/settings_screen/settings_screen.dart';
 import 'package:huwamemo/ui/state/home_screen_state.dart';
+import 'package:huwamemo/utils/app_lifecycle_state_provider.dart';
 import 'package:huwamemo/widgets/cloud_container.dart';
 import 'package:huwamemo/widgets/error_dialog.dart';
-import 'package:huwamemo/ui/archive_screen/archive_screen.dart';
 import 'package:huwamemo/widgets/two_way_dialog.dart';
 
 class HomeScreen extends HookConsumerWidget {
@@ -33,6 +34,11 @@ class HomeScreen extends HookConsumerWidget {
 
     final inputAnimationController = useAnimationController(
       duration: const Duration(milliseconds: 700),
+    );
+
+    ref.listen<AppLifecycleState>(
+      appLifecycleStateProvider,
+      (previous, next) => debugPrint('Previous: $previous, Next: $next'),
     );
 
     void initialize() async {
@@ -72,6 +78,7 @@ class HomeScreen extends HookConsumerWidget {
       showTextInput.value = true;
       textEditingController.clear();
       inputText.value = '';
+      inputAnimationController.reset();
       inputAnimationController.forward();
       FocusScope.of(context).requestFocus(focusNode);
     }
@@ -165,54 +172,54 @@ class HomeScreen extends HookConsumerWidget {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        leading: IconButton(
-            onPressed: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const SettingsScreen()));
-            },
-            icon: Icon(
-              Icons.settings,
-              size: 36,
-              color: Colors.grey.shade400,
-            )),
-        actions: [
-          // Padding(
-          //   padding: const EdgeInsets.only(right: 8.0),
-          //   child: IconButton(
-          //       onPressed: () {
-          //         Navigator.push(
-          //             context,
-          //             MaterialPageRoute(
-          //                 builder: (context) => const ArchiveScreen()));
-          //       },
-          //       icon: const Icon(
-          //         Icons.archive,
-          //         size: 32,
-          //       )),
-          // ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: IconButton(
-                onPressed: () {
-                  if (!totalHeightCheck(state.homeMemos)) {
-                    ErrorDialog.show(context, '上限です');
-                    return;
-                  } else {
-                    handleTapAdd();
-                  }
-                },
-                icon: Icon(
-                  Icons.add_circle_rounded,
-                  size: 48,
-                  color: Colors.red.shade200,
-                )),
-          )
-        ],
-      ),
+      // appBar: AppBar(
+      //   backgroundColor: Colors.transparent,
+      //   // leading: IconButton(
+      //   //     onPressed: () {
+      //   //       Navigator.push(
+      //   //           context,
+      //   //           MaterialPageRoute(
+      //   //               builder: (context) => const SettingsScreen()));
+      //   //     },
+      //   //     icon: Icon(
+      //   //       Icons.settings,
+      //   //       size: 36,
+      //   //       color: Colors.grey.shade400,
+      //   //     )),
+      //   // actions: [
+      //   //   // Padding(
+      //   //   //   padding: const EdgeInsets.only(right: 8.0),
+      //   //   //   child: IconButton(
+      //   //   //       onPressed: () {
+      //   //   //         Navigator.push(
+      //   //   //             context,
+      //   //   //             MaterialPageRoute(
+      //   //   //                 builder: (context) => const ArchiveScreen()));
+      //   //   //       },
+      //   //   //       icon: const Icon(
+      //   //   //         Icons.archive,
+      //   //   //         size: 32,
+      //   //   //       )),
+      //   //   // ),
+      //   //   Padding(
+      //   //     padding: const EdgeInsets.only(right: 8.0),
+      //   //     child: IconButton(
+      //   //         onPressed: () {
+      //   //           if (!totalHeightCheck(state.homeMemos)) {
+      //   //             ErrorDialog.show(context, '上限です');
+      //   //             return;
+      //   //           } else {
+      //   //             handleTapAdd();
+      //   //           }
+      //   //         },
+      //   //         icon: Icon(
+      //   //           Icons.add_circle_rounded,
+      //   //           size: 48,
+      //   //           color: Colors.red.shade200,
+      //   //         )),
+      //   //   )
+      //   // ],
+      // ),
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -234,6 +241,48 @@ class HomeScreen extends HookConsumerWidget {
             ),
           ),
           SafeArea(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const SettingsScreen()));
+                      },
+                      icon: Icon(
+                        Icons.settings,
+                        size: 36,
+                        color: Colors.grey.shade400,
+                      )),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: IconButton(
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          if (!totalHeightCheck(state.homeMemos)) {
+                            ErrorDialog.show(context, '上限です');
+                            return;
+                          } else {
+                            handleTapAdd();
+                          }
+                        },
+                        icon: Icon(
+                          Icons.add_circle_rounded,
+                          size: 48,
+                          color: Colors.red.shade200,
+                        )),
+                  )
+                ],
+              ),
+            ),
+          ),
+          SafeArea(
             child: Center(
               child: SizedBox(
                 height: h,
@@ -246,6 +295,7 @@ class HomeScreen extends HookConsumerWidget {
                       state.homeMemos.length,
                       (index) => GestureDetector(
                         onTap: () {
+                          HapticFeedback.lightImpact();
                           selectedMeme.value = state.homeMemos[index].memo;
                         },
                         child: CloudContainer(
@@ -644,24 +694,28 @@ class DetailWidget extends HookWidget {
                                         backgroundColor: Colors.red.shade400,
                                         foregroundColor: Colors.white),
                                     onPressed: () {
+                                      HapticFeedback.lightImpact();
                                       handleDelete();
                                     },
                                     child: const Text('削除'),
                                   ),
                                   IconButton(
                                     onPressed: () {
+                                      HapticFeedback.lightImpact();
                                       incrementRemainingDays();
                                     },
                                     icon: const Icon(Icons.add),
                                   ),
                                   IconButton(
                                     onPressed: () {
+                                      HapticFeedback.lightImpact();
                                       decrementRemainingDays();
                                     },
                                     icon: const Icon(Icons.remove),
                                   ),
                                   ElevatedButton(
                                     onPressed: () {
+                                      HapticFeedback.lightImpact();
                                       handleUpdate();
                                     },
                                     child: const Text('更新'),
@@ -679,6 +733,7 @@ class DetailWidget extends HookWidget {
                     alignment: const Alignment(0.0, 0.85),
                     child: ElevatedButton(
                       onPressed: () {
+                        HapticFeedback.lightImpact();
                         handleBack();
                       },
                       child: const Text('戻る'),
@@ -804,6 +859,7 @@ class TextInput extends StatelessWidget {
                                 ElevatedButton(
                                   onPressed: () {
                                     if (inputText.isEmpty) return;
+                                    HapticFeedback.lightImpact();
                                     onSave();
                                   },
                                   child: const Text('追加'),

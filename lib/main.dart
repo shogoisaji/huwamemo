@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:huwamemo/repository/shared_preferences/shared_preferences_repository.dart';
 import 'package:huwamemo/ui/home_screen/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 void main() async {
@@ -33,9 +32,9 @@ void main() async {
         useMaterial3: true,
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ButtonStyle(
-            textStyle: WidgetStateProperty.all(
+            textStyle: MaterialStateProperty.all(
                 const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-            elevation: WidgetStateProperty.all(1.5),
+            elevation: MaterialStateProperty.all(1.5),
           ),
         ),
         colorScheme: ColorScheme(
@@ -48,6 +47,8 @@ void main() async {
           onError: Colors.white,
           surface: Colors.blueGrey.shade200,
           onSurface: Colors.blueGrey.shade900,
+          background: Colors.blueGrey.shade100,
+          onBackground: Colors.blueGrey.shade900,
         )),
     debugShowCheckedModeBanner: false,
   ));

@@ -14,7 +14,7 @@ SqfliteRepository sqfliteRepository(
 }
 
 class SqfliteRepository {
-  static const _databaseName = "sqflite_Database_test12.db";
+  static const _databaseName = "sqflite_Database_dest1.db";
   static const _databaseVersion = 1;
   static const table = 'MemoTable';
 

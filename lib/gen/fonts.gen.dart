@@ -10,6 +10,6 @@
 class FontFamily {
   FontFamily._();
 
-  /// Font family: InterTight
-  static const String interTight = 'InterTight';
+  /// Font family: MPlusRounded1c
+  static const String mPlusRounded1c = 'MPlusRounded1c';
 }
