@@ -10,6 +10,13 @@ class ArchiveScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('アーカイブ'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+            FocusScope.of(context).unfocus();
+          },
+        ),
       ),
       body: SizedBox(
         width: MediaQuery.of(context).size.width,

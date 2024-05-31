@@ -28,10 +28,27 @@ void main() async {
   runApp(MaterialApp(
     home: scope,
     theme: ThemeData(
-      scaffoldBackgroundColor: Colors.grey,
-      fontFamily: 'MPlusRounded1c',
-      useMaterial3: true,
-    ),
+        scaffoldBackgroundColor: Colors.blueGrey,
+        fontFamily: 'MPlusRounded1c',
+        useMaterial3: true,
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ButtonStyle(
+            textStyle: WidgetStateProperty.all(
+                const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            elevation: WidgetStateProperty.all(1.5),
+          ),
+        ),
+        colorScheme: ColorScheme(
+          brightness: Brightness.light,
+          primary: Colors.blueGrey.shade800,
+          onPrimary: const Color.fromARGB(255, 196, 202, 203),
+          secondary: const Color(0xFFFF9800),
+          onSecondary: Colors.brown,
+          error: Colors.red,
+          onError: Colors.white,
+          surface: Colors.blueGrey.shade200,
+          onSurface: Colors.blueGrey.shade900,
+        )),
     debugShowCheckedModeBanner: false,
   ));
 }

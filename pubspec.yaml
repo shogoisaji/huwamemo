@@ -2,7 +2,7 @@ name: huwamemo
 description: "A new Flutter project."
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ">=3.4.1 <4.0.0"
@@ -23,6 +23,7 @@ dependencies:
   flutter_native_splash:
   auto_size_text:
   flutter_svg:
+  package_info_plus:
 
   cupertino_icons: ^1.0.6
 
@@ -59,3 +60,11 @@ flutter:
           weight: 400
         - asset: assets/fonts/M_PLUS_Rounded_1c/MPLUSRounded1c-Light.ttf
           weight: 300
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#427BD1"
+  adaptive_icon_foreground: "assets/images/icon.png"

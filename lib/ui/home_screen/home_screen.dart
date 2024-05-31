@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -5,10 +7,12 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:huwamemo/models/memo_model.dart';
 import 'package:huwamemo/settings/text_theme.dart';
 import 'package:huwamemo/ui/home_screen/home_screen_view_model.dart';
+import 'package:huwamemo/ui/settings_screen/settings_screen.dart';
 import 'package:huwamemo/ui/state/home_screen_state.dart';
 import 'package:huwamemo/widgets/cloud_container.dart';
 import 'package:huwamemo/widgets/error_dialog.dart';
 import 'package:huwamemo/ui/archive_screen/archive_screen.dart';
+import 'package:huwamemo/widgets/two_way_dialog.dart';
 
 class HomeScreen extends HookConsumerWidget {
   const HomeScreen({super.key});
@@ -28,7 +32,7 @@ class HomeScreen extends HookConsumerWidget {
     final inputText = useState<String>('');
 
     final inputAnimationController = useAnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 700),
     );
 
     void initialize() async {
@@ -77,16 +81,26 @@ class HomeScreen extends HookConsumerWidget {
         await ref.read(homeScreenViewModelProvider.notifier).deleteMemo(id);
         initialize();
         selectedMeme.value = null;
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('削除しました'),
-            duration: Duration(seconds: 2),
-          ),
-        );
       } catch (e) {
-        print(e);
+        return;
       }
+    }
+
+    void handleTapDelete(String id) {
+      showDialog(
+          context: context,
+          builder: (context) => TwoWayDialog(
+                title: '削除しますか？',
+                leftButtonText: '削除',
+                rightButtonText: 'キャンセル',
+                onLeftButtonPressed: () {
+                  FocusScope.of(context).unfocus();
+                  deleteMemo(id);
+                },
+                onRightButtonPressed: () {
+                  FocusScope.of(context).unfocus();
+                },
+              ));
     }
 
     void handleUpdate(MemoModel memo) async {
@@ -103,20 +117,18 @@ class HomeScreen extends HookConsumerWidget {
         await ref.read(homeScreenViewModelProvider.notifier).updateMemo(memo);
         selectedMeme.value = null;
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('更新しました'),
-            duration: Duration(seconds: 2),
-          ),
-        );
         initialize();
       } catch (e) {
-        print(e);
+        return;
       }
     }
 
     void handleSaveText(String text) async {
-      print('text: $text');
+      if (!totalHeightCheck(state.homeMemos)) {
+        if (!context.mounted) return;
+        ErrorDialog.show(context, '上限です');
+        return;
+      }
       try {
         await ref.read(homeScreenViewModelProvider.notifier).insertMemo(text);
 
@@ -127,18 +139,9 @@ class HomeScreen extends HookConsumerWidget {
         if (!context.mounted) return;
         FocusScope.of(context).unfocus();
 
-        /// スナックバーを表示
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('メモを保存しました'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-
         initialize();
       } catch (e) {
-        print(e);
+        return;
       }
     }
 
@@ -155,6 +158,7 @@ class HomeScreen extends HookConsumerWidget {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         handleTapAdd();
       });
+
       return;
     }, []);
 
@@ -164,11 +168,16 @@ class HomeScreen extends HookConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         leading: IconButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const SettingsScreen()));
+            },
             icon: Icon(
               Icons.settings,
-              size: 32,
-              color: Colors.grey.shade600,
+              size: 36,
+              color: Colors.grey.shade400,
             )),
         actions: [
           // Padding(
@@ -210,8 +219,7 @@ class HomeScreen extends HookConsumerWidget {
           _bg(),
 
           /// 隠しTextField
-          SizedBox(
-            width: 1,
+          IgnorePointer(
             child: TextField(
               focusNode: focusNode,
               controller: textEditingController,
@@ -238,11 +246,10 @@ class HomeScreen extends HookConsumerWidget {
                       state.homeMemos.length,
                       (index) => GestureDetector(
                         onTap: () {
-                          print('tap');
                           selectedMeme.value = state.homeMemos[index].memo;
                         },
                         child: CloudContainer(
-                          waveCount: 25,
+                          waveCount: 30,
                           color: Color(int.parse(
                               state.homeMemos[index].memo.color
                                   .split('(0x')[1]
@@ -252,9 +259,9 @@ class HomeScreen extends HookConsumerWidget {
                           height: state.homeMemos[index].height,
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 0),
-                          waveRadius: 28,
+                          waveRadius: 15 + 10 * (w > 500 ? 1 : 0),
                           touchStrength: 0.7,
-                          wavePaddingVertical: 24.0,
+                          wavePaddingVertical: 15.0 + 20 * (w > 500 ? 1 : 0),
                           wavePaddingHorizontal: 50.0,
                           actionNumber: actionNumber.value,
                           child: SizedBox(
@@ -295,7 +302,7 @@ class HomeScreen extends HookConsumerWidget {
                     selectedMeme.value = null;
                   },
                   onDelete: (String id) {
-                    deleteMemo(id);
+                    handleTapDelete(id);
                   },
                   onUpdate: (MemoModel memo) {
                     handleUpdate(memo);
@@ -442,7 +449,7 @@ class DetailWidget extends HookWidget {
                         FocusScope.of(context).unfocus();
                       },
                       child: CloudContainer(
-                        waveCount: 30,
+                        waveCount: 35,
                         color: Color(int.parse(
                             memo.color.split('(0x')[1].split(')')[0],
                             radix: 16)),
@@ -450,7 +457,7 @@ class DetailWidget extends HookWidget {
                         height: size.height,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 0),
-                        waveRadius: 40,
+                        waveRadius: 30,
                         touchStrength: 0.7,
                         wavePaddingVertical: wavePaddingVertical,
                         wavePaddingHorizontal: wavePaddingHorizontal,
@@ -633,6 +640,9 @@ class DetailWidget extends HookWidget {
                                     MainAxisAlignment.spaceAround,
                                 children: [
                                   ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red.shade400,
+                                        foregroundColor: Colors.white),
                                     onPressed: () {
                                       handleDelete();
                                     },
@@ -669,7 +679,6 @@ class DetailWidget extends HookWidget {
                     alignment: const Alignment(0.0, 0.85),
                     child: ElevatedButton(
                       onPressed: () {
-                        print('back');
                         handleBack();
                       },
                       child: const Text('戻る'),
@@ -794,7 +803,7 @@ class TextInput extends StatelessWidget {
                                 const SizedBox(height: 4),
                                 ElevatedButton(
                                   onPressed: () {
-                                    print('save');
+                                    if (inputText.isEmpty) return;
                                     onSave();
                                   },
                                   child: const Text('追加'),

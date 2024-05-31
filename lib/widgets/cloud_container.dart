@@ -88,7 +88,7 @@ class _CloudContainerState extends State<CloudContainer>
       waveBaseRectWidth: waveBaseRectWidth,
       waveBaseRectHeight: waveBaseRectHeight,
       animationValue: _waveAnimation.value,
-      waveRadius: widget.waveRadius,
+      waveRadius: widget.waveRadius + waveBaseRectWidth / 40,
       waveCount: widget.waveCount,
       pointDeltas: touchPointDeltas,
       basePointList: basePointList,
@@ -322,6 +322,10 @@ class _CloudContainerState extends State<CloudContainer>
     cloudPath = createCloudPath();
     if (widget.isWaveMove) {
       _waveAnimationController.repeat(reverse: true);
+    } else {
+      Future.delayed(Duration(milliseconds: Random().nextInt(2000)), () {
+        _waveAnimationController.forward();
+      });
     }
   }
 
@@ -387,15 +391,19 @@ class _CloudContainerState extends State<CloudContainer>
                     paddingHorizontal: widget.wavePaddingHorizontal / 2,
                     paddingVertical: widget.wavePaddingVertical / 2,
                   ),
-                  child: Container(
-                      width: widget.width,
-                      height: widget.height,
-                      color: widget.color,
-                      child: OverflowBox(
-                          maxHeight: widget.height * 2,
-                          child: Center(
-                            child: widget.child,
-                          ))),
+                  child: OverflowBox(
+                    maxHeight: widget.height * 2,
+                    maxWidth: widget.width * 2,
+                    child: Container(
+                        width: widget.width * 2,
+                        height: widget.height * 2,
+                        color: widget.color,
+                        child: OverflowBox(
+                            // maxHeight: widget.height * 2,
+                            child: Center(
+                          child: widget.child,
+                        ))),
+                  ),
                 ),
               ),
             ),
