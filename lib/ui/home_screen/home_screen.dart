@@ -8,7 +8,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:huwamemo/models/memo_model.dart';
 import 'package:huwamemo/settings/text_theme.dart';
 import 'package:huwamemo/ui/home_screen/home_screen_view_model.dart';
-import 'package:huwamemo/ui/settings_screen/settings_screen.dart';
 import 'package:huwamemo/ui/state/home_screen_state.dart';
 import 'package:huwamemo/utils/app_lifecycle_state_provider.dart';
 import 'package:huwamemo/widgets/cloud_container.dart';
@@ -34,11 +33,6 @@ class HomeScreen extends HookConsumerWidget {
 
     final inputAnimationController = useAnimationController(
       duration: const Duration(milliseconds: 700),
-    );
-
-    ref.listen<AppLifecycleState>(
-      appLifecycleStateProvider,
-      (previous, next) => debugPrint('Previous: $previous, Next: $next'),
     );
 
     void initialize() async {
@@ -117,7 +111,10 @@ class HomeScreen extends HookConsumerWidget {
 
       if (!updateTotalHeightCheck(updatedMemos)) {
         if (!context.mounted) return;
-        ErrorDialog.show(context, '上限です');
+        ErrorDialog.show(
+          context,
+          'メモの削除が必要です',
+        );
         return;
       }
       try {
@@ -130,34 +127,42 @@ class HomeScreen extends HookConsumerWidget {
       }
     }
 
+    void handleHiddenTextInput() {
+      inputAnimationController.reverse(from: 0.8);
+      FocusScope.of(context).unfocus();
+      Future.delayed(const Duration(milliseconds: 500), () {
+        showTextInput.value = false;
+      });
+    }
+
     void handleSaveText(String text) async {
       if (!totalHeightCheck(state.homeMemos)) {
         if (!context.mounted) return;
-        ErrorDialog.show(context, '上限です');
+        ErrorDialog.show(
+          context,
+          'メモの削除が必要です',
+        );
         return;
       }
       try {
         await ref.read(homeScreenViewModelProvider.notifier).insertMemo(text);
 
-        showTextInput.value = false;
+        // showTextInput.value = false;
 
-        /// input をしまう
+        // /// input をしまう
+        // inputAnimationController.reverse();
+        // if (!context.mounted) return;
+        // FocusScope.of(context).unfocus();
         inputAnimationController.reverse();
-        if (!context.mounted) return;
         FocusScope.of(context).unfocus();
+        Future.delayed(const Duration(milliseconds: 500), () {
+          showTextInput.value = false;
+        });
 
         initialize();
       } catch (e) {
         return;
       }
-    }
-
-    void handleHiddenTextInput() {
-      inputAnimationController.reverse();
-      FocusScope.of(context).unfocus();
-      Future.delayed(const Duration(milliseconds: 500), () {
-        showTextInput.value = false;
-      });
     }
 
     useEffect(() {
@@ -169,57 +174,21 @@ class HomeScreen extends HookConsumerWidget {
       return;
     }, []);
 
+    ref.listen<AppLifecycleState>(
+      appLifecycleStateProvider,
+      (previous, next) {
+        if (previous == AppLifecycleState.inactive &&
+            next == AppLifecycleState.resumed) {
+          FocusScope.of(context).unfocus();
+          selectedMeme.value = null;
+          handleTapAdd();
+        }
+      },
+    );
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       extendBodyBehindAppBar: true,
-      // appBar: AppBar(
-      //   backgroundColor: Colors.transparent,
-      //   // leading: IconButton(
-      //   //     onPressed: () {
-      //   //       Navigator.push(
-      //   //           context,
-      //   //           MaterialPageRoute(
-      //   //               builder: (context) => const SettingsScreen()));
-      //   //     },
-      //   //     icon: Icon(
-      //   //       Icons.settings,
-      //   //       size: 36,
-      //   //       color: Colors.grey.shade400,
-      //   //     )),
-      //   // actions: [
-      //   //   // Padding(
-      //   //   //   padding: const EdgeInsets.only(right: 8.0),
-      //   //   //   child: IconButton(
-      //   //   //       onPressed: () {
-      //   //   //         Navigator.push(
-      //   //   //             context,
-      //   //   //             MaterialPageRoute(
-      //   //   //                 builder: (context) => const ArchiveScreen()));
-      //   //   //       },
-      //   //   //       icon: const Icon(
-      //   //   //         Icons.archive,
-      //   //   //         size: 32,
-      //   //   //       )),
-      //   //   // ),
-      //   //   Padding(
-      //   //     padding: const EdgeInsets.only(right: 8.0),
-      //   //     child: IconButton(
-      //   //         onPressed: () {
-      //   //           if (!totalHeightCheck(state.homeMemos)) {
-      //   //             ErrorDialog.show(context, '上限です');
-      //   //             return;
-      //   //           } else {
-      //   //             handleTapAdd();
-      //   //           }
-      //   //         },
-      //   //         icon: Icon(
-      //   //           Icons.add_circle_rounded,
-      //   //           size: 48,
-      //   //           color: Colors.red.shade200,
-      //   //         )),
-      //   //   )
-      //   // ],
-      // ),
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -250,10 +219,7 @@ class HomeScreen extends HookConsumerWidget {
                   IconButton(
                       onPressed: () {
                         HapticFeedback.lightImpact();
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const SettingsScreen()));
+                        Navigator.pushNamed(context, '/settings');
                       },
                       icon: Icon(
                         Icons.settings,
@@ -266,7 +232,10 @@ class HomeScreen extends HookConsumerWidget {
                         onPressed: () {
                           HapticFeedback.lightImpact();
                           if (!totalHeightCheck(state.homeMemos)) {
-                            ErrorDialog.show(context, '上限です');
+                            ErrorDialog.show(
+                              context,
+                              'メモの削除が必要です',
+                            );
                             return;
                           } else {
                             handleTapAdd();
@@ -318,22 +287,18 @@ class HomeScreen extends HookConsumerWidget {
                             width: double.infinity,
                             height: double.infinity,
                             child: Center(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 32.0, vertical: 6),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    AutoSizeText(
-                                      state.homeMemos[index].memo.content,
-                                      style: const TextStyle(
-                                          fontSize: 30, height: 1.1),
-                                      minFontSize: 16,
-                                      maxLines: 4,
-                                      overflow: TextOverflow.ellipsis,
-                                    )
-                                  ],
-                                ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  AutoSizeText(
+                                    state.homeMemos[index].memo.content,
+                                    style: const TextStyle(
+                                        fontSize: 30, height: 1.1),
+                                    minFontSize: 16,
+                                    maxLines: 4,
+                                    overflow: TextOverflow.ellipsis,
+                                  )
+                                ],
                               ),
                             ),
                           ),
@@ -548,7 +513,7 @@ class DetailWidget extends HookWidget {
                                           // focusNode: focusNode,
                                           controller: contentTextController,
                                           style: const TextStyle(
-                                              fontSize: 30, height: 1.1),
+                                              fontSize: 24, height: 1.1),
                                           maxLines: null,
                                           decoration: const InputDecoration(
                                             contentPadding: EdgeInsets.all(8),
@@ -582,7 +547,7 @@ class DetailWidget extends HookWidget {
                                           // focusNode: focusNode,
                                           controller: descriptionTextController,
                                           style: const TextStyle(
-                                              fontSize: 30, height: 1.1),
+                                              fontSize: 24, height: 1.1),
                                           maxLines: null,
                                           decoration: const InputDecoration(
                                             contentPadding: EdgeInsets.all(8),
@@ -732,11 +697,18 @@ class DetailWidget extends HookWidget {
                   Align(
                     alignment: const Alignment(0.0, 0.85),
                     child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            const Color.fromARGB(255, 83, 132, 155),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 100, vertical: 6),
+                      ),
                       onPressed: () {
                         HapticFeedback.lightImpact();
                         handleBack();
                       },
-                      child: const Text('戻る'),
+                      child: const Text('戻る', style: TextStyle(fontSize: 28)),
                     ),
                   )
                 ],
@@ -809,68 +781,66 @@ class TextInput extends StatelessWidget {
                   transform: Matrix4.identity()
                     ..translate(0.0, moveAnimation.value, 0.0)
                     ..scale(scaleAnimation.value, scaleAnimation.value, 1.0),
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Align(
-                          alignment: Alignment.topCenter,
-                          child: CloudContainer(
-                            waveCount: 25,
-                            color: Colors.white,
-                            width: w,
-                            height: 200,
-                            isWaveMove: true,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 0),
-                            waveRadius: 28,
-                            touchStrength: 0.7,
-                            wavePaddingVertical: 24.0,
-                            wavePaddingHorizontal: 50.0,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Align(
+                        alignment: const Alignment(0.0, -0.9),
+                        child: CloudContainer(
+                          waveCount: 25,
+                          color: Colors.white,
+                          width: w,
+                          height: 200,
+                          isWaveMove: true,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 0),
+                          waveRadius: 28,
+                          touchStrength: 0.7,
+                          wavePaddingVertical: 50.0,
+                          wavePaddingHorizontal: 50.0,
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.topCenter,
+                        child: Container(
+                          height: 200,
+                          padding: const EdgeInsets.only(
+                              left: 24, right: 24, top: 52, bottom: 0),
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  // color: Colors.green,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 4),
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  child: Center(
+                                      child: AutoSizeText(
+                                    inputText,
+                                    style: const TextStyle(
+                                        fontSize: 30, height: 1.1),
+                                    minFontSize: 16,
+                                    maxLines: 4,
+                                    overflow: TextOverflow.ellipsis,
+                                  )),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              ElevatedButton(
+                                onPressed: () {
+                                  if (inputText.isEmpty) return;
+                                  HapticFeedback.lightImpact();
+                                  onSave();
+                                },
+                                child: const Text('追加'),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
                           ),
                         ),
-                        Align(
-                          alignment: Alignment.topCenter,
-                          child: Container(
-                            height: 200,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 32, vertical: 12),
-                            child: Column(
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 4),
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    child: Center(
-                                        child: AutoSizeText(
-                                      inputText,
-                                      style: const TextStyle(
-                                          fontSize: 30, height: 1.1),
-                                      minFontSize: 16,
-                                      maxLines: 4,
-                                      overflow: TextOverflow.ellipsis,
-                                    )),
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    if (inputText.isEmpty) return;
-                                    HapticFeedback.lightImpact();
-                                    onSave();
-                                  },
-                                  child: const Text('追加'),
-                                ),
-                                const SizedBox(height: 8),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),

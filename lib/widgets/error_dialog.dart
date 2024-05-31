@@ -37,18 +37,25 @@ class ErrorDialog {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  const Column(
-                    children: [
-                      Icon(Icons.error),
-                      SizedBox(height: 8),
-                    ],
+                  Icon(
+                    Icons.error,
+                    size: 48,
+                    color: Colors.red.shade200,
                   ),
+                  const SizedBox(height: 8),
                   Text(
                     message,
                     style:
                         const TextStyle(color: Colors.blueGrey, fontSize: 24),
                   ),
-                  const SizedBox(height: 10),
+                  secondaryMessage != null
+                      ? Text(
+                          secondaryMessage,
+                          style: const TextStyle(
+                              color: Colors.blueGrey, fontSize: 20),
+                        )
+                      : const SizedBox.shrink(),
+                  const SizedBox(height: 16),
                   Align(
                     alignment: Alignment.bottomRight,
                     child: InkWell(
@@ -74,7 +81,10 @@ class ErrorDialog {
                         ),
                         child: const Center(
                             child: Text('OK',
-                                style: TextStyle(color: Colors.white))),
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w700))),
                       ),
                     ),
                   ),

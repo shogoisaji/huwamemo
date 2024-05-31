@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:huwamemo/settings/text_theme.dart';
+import 'package:huwamemo/utils/app_lifecycle_state_provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class SettingsScreen extends HookWidget {
+class SettingsScreen extends HookConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final appVersion = useState('');
 
     Widget spacer() => const SizedBox(height: 24.0);
@@ -38,6 +40,16 @@ class SettingsScreen extends HookWidget {
 
       appVersion.value = packageInfo.version;
     }
+
+    ref.listen<AppLifecycleState>(
+      appLifecycleStateProvider,
+      (previous, next) {
+        if (previous == AppLifecycleState.inactive &&
+            next == AppLifecycleState.resumed) {
+          Navigator.pop(context);
+        }
+      },
+    );
 
     useEffect(() {
       loadVersion();

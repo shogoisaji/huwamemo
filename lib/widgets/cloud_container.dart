@@ -398,11 +398,11 @@ class _CloudContainerState extends State<CloudContainer>
                         width: widget.width * 2,
                         height: widget.height * 2,
                         color: widget.color,
-                        child: OverflowBox(
-                            // maxHeight: widget.height * 2,
-                            child: Center(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: widget.width / 2 + 30, vertical: 10),
+                        child: Center(
                           child: widget.child,
-                        ))),
+                        )),
                   ),
                 ),
               ),
